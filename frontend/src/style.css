@@ -1,0 +1,12 @@
+/* Style global minimal.
+   Reset lengkap, font Inter, dan styling scrollbar ada di src/assets/styles.css */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+}

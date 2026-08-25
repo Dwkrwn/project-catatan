@@ -1,0 +1,60 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* === SELECTION === */
+::selection {
+  background: #bbf7d0;
+  color: #166534;
+}
+
+/* === LINK === */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* === BUTTON RESET === */
+button {
+  font-family: inherit;
+}
+
+/* === INPUT RESET === */
+input,
+select,
+textarea {
+  font-family: inherit;
+}

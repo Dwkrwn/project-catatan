@@ -12,8 +12,8 @@ exports.getTransactions = async (req, res) => {
     const params = [userId];
 
     if (month && year) {
-      query += ` AND EXTRACT(MONTH FROM t.date) = $${params.length + 1}
-            AND EXTRACT(YEAR FROM t.date) = $${params.length + 2}`;
+      query += ` AND EXTRACT(MONTH FROM t.transaction_date) = $${params.length + 1}
+            AND EXTRACT(YEAR FROM t.transaction_date) = $${params.length + 2}`;
       params.push(month, year);
     }
 
@@ -48,7 +48,7 @@ exports.addTransaction = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO tb_transactions (user_id, category_id, type, amount, description, date)
+      `INSERT INTO tb_transactions (user_id, category_id, type, amount, description, transaction_date)
                     VALUES ($1, $2, $3, $4, $5,$6) RETURNING *`,
       [userId, category_id, type, amount, description, date || new Date()],
     );
@@ -80,7 +80,7 @@ exports.updateTransaction = async (req, res) => {
 
     const result = await pool.query(
       `UPDATE tb_transactions
-        SET category_id = $1, type = $2, amount = $3, description = $4, date = $5
+        SET category_id = $1, type = $2, amount = $3, description = $4, transaction_date = $5
         WHERE id = $6 AND user_id = $7 RETURNING *`,
       [category_id, type, amount, description, date, transactionId, userId],
     );
@@ -129,8 +129,8 @@ exports.getSummary = async (req, res) => {
       `SELECT COALESCE(SUM(amount), 0) as total
              FROM tb_transactions
              WHERE user_id = $1 AND type = 'income'
-             AND EXTRACT(MONTH FROM date) = $2
-             AND EXTRACT(YEAR FROM date) = $3`,
+             AND EXTRACT(MONTH FROM transaction_date) = $2
+             AND EXTRACT(YEAR FROM transaction_date) = $3`,
       [userId, currentMonth, currentYear],
     );
 
@@ -139,8 +139,8 @@ exports.getSummary = async (req, res) => {
       `SELECT COALESCE(SUM(amount), 0) as total
              FROM tb_transactions
              WHERE user_id = $1 AND type = 'expense'
-             AND EXTRACT(MONTH FROM date) = $2
-             AND EXTRACT(YEAR FROM date) = $3`,
+             AND EXTRACT(MONTH FROM transaction_date) = $2
+             AND EXTRACT(YEAR FROM transaction_date) = $3`,
       [userId, currentMonth, currentYear],
     );
 
@@ -187,8 +187,8 @@ exports.getExpenseByCategory = async (req, res) => {
                 COUNT(t.id) as transaction_count
              FROM tb_categories c
              LEFT JOIN tb_transactions t ON c.id = t.category_id
-                 AND EXTRACT(MONTH FROM t.date) = $2
-                 AND EXTRACT(YEAR FROM t.date) = $3
+                 AND EXTRACT(MONTH FROM t.transaction_date) = $2
+                 AND EXTRACT(YEAR FROM t.transaction_date) = $3
                  AND t.user_id = $1
                  AND t.type = 'expense'
              WHERE c.type = 'expense' AND (c.user_id IS NULL OR c.user_id = $1)

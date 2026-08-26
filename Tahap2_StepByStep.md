@@ -904,24 +904,60 @@ app.listen(PORT, () => {
 
 ---
 
-### 📥 Langkah 0: Install Postman
+## 📥 Langkah 0: Persiapan Postman
+
+### Install Postman
 
 1. Download Postman di https://www.postman.com/downloads/
 2. Install seperti biasa
 3. Buka Postman
 
+### Buat Collection (Agar Terorganisir)
+
+> **Mengapa pakai Collection?** Agar semua request tersimpan rapi dalam satu folder dan bisa dijalankan berurutan dengan mudah.
+
+1. Di panel kiri Postman, klik **`Collections`** tab
+2. Klik tombol **`+`** (Create Collection)
+3. Beri nama: **`Catatan Keuangan API`**
+4. Klik ikon **titik tiga (...)** di collection → **Rename** jika perlu
+
+### Atur Environment Variables (Pilihan, tapi Sangat Disarankan)
+
+> **Mengapa pakai Environment Variable?** Agar tidak perlu copy-paste token berulang kali di setiap request.
+
+1. Klik ikon **⚙️ (Environments)** di panel kiri
+2. Klik **`+`** → Beri nama: **`Local Development`**
+3. Tambahkan variable berikut:
+
+| Variable | Initial Value | Description |
+|----------|---------------|-------------|
+| `base_url` | `http://localhost:5000` | Alamat server lokal |
+| `token` | *(kosongkan dulu)* | Akan diisi setelah login |
+
+4. Klik **`Save`**
+5. Di pojok kanan atas, pilih environment **`Local Development`** sebagai active environment
+
+> **Cara pakai variable di URL**: Gunakan `{{base_url}}` alih-alih `http://localhost:5000`
+> Contoh: `{{base_url}}/api/auth/login`
+
 ---
 
-### 📝 Langkah 1: Register User Baru
+## 📝 Langkah 1: Register User Baru
 
 **Tujuan**: Membuat akun baru untuk testing
 
+### Step-by-Step di Postman:
+
 1. **Buka tab baru** di Postman (klik tab `+`)
-2. **Ubah method** menjadi `POST` (klik dropdown yang tertulis GET, pilih POST)
-3. **Masukkan URL**: `http://localhost:5000/api/auth/register`
+2. **Ubah method** menjadi `POST`
+   - Klik dropdown yang tertulis **GET** → pilih **POST**
+3. **Masukkan URL**:
+   ```
+   http://localhost:5000/api/auth/register
+   ```
 4. **Klik tab `Body`** di bawah kolom URL
 5. **Pilih `raw`** (bukan form-data, x-www-form-urlencoded, dll)
-6. **Ubah dropdown di sebelah raw** dari `Text` menjadi `JSON`
+6. **Ubah dropdown** di sebelah kanan `raw` dari `Text` menjadi **`JSON`**
 7. **Ketik body** seperti ini:
 
 ```json
@@ -934,7 +970,8 @@ app.listen(PORT, () => {
 
 8. **Klik tombol `Send`** (biru, di sebelah kanan URL)
 
-**Expected Response (Status 201 Created):**
+### Expected Response (Status 201 Created):
+
 ```json
 {
     "message": "Registrasi berhasil",
@@ -946,19 +983,30 @@ app.listen(PORT, () => {
 }
 ```
 
-> Jika muncul error 409, berarti email/username sudah terdaftar. Ganti dengan data lain.
+### ⚠️ Jika Gagal:
+
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `409 "Email atau Username sudah terdaftar"` | Email/username sudah dipakai | Ganti dengan email/username lain |
+| `400 "Semua field wajib diisi"` | Ada field yang kosong | Pastikan username, email, dan password semua terisi |
+| `ECONNREFUSED` | Server mati | Jalankan `npm run dev` di terminal backend |
 
 ---
 
-### 🔑 Langkah 2: Login & Mendapatkan Token JWT
+## 🔑 Langkah 2: Login & Mendapatkan Token JWT
 
 **Tujuan**: Login dan ambil token untuk akses endpoint lain
 
+### Step-by-Step di Postman:
+
 1. **Buka tab baru** di Postman (klik tab `+`)
-2. **Ubah method** menjadi `POST`
-3. **Masukkan URL**: `http://localhost:5000/api/auth/login`
+2. **Ubah method** menjadi **`POST`**
+3. **Masukkan URL**:
+   ```
+   http://localhost:5000/api/auth/login
+   ```
 4. **Klik tab `Body`**
-5. **Pilih `raw`** → **pilih `JSON`**
+5. **Pilih `raw`** → ubah dropdown menjadi **`JSON`**
 6. **Ketik body**:
 
 ```json
@@ -970,7 +1018,8 @@ app.listen(PORT, () => {
 
 7. **Klik tombol `Send`**
 
-**Expected Response (Status 200 OK):**
+### Expected Response (Status 200 OK):
+
 ```json
 {
     "message": "Login berhasil",
@@ -993,45 +1042,69 @@ Perhatikan response di atas! **Token** ada di field `"token"`:
 **Untuk menyalin token:**
 1. **Klik dan drag** untuk select seluruh teks token (bagian setelah `"token": "`)
 2. **Klik kanan** → **Copy** (atau `Ctrl+C`)
-3. **Simpan token ini** di temporary notepad atau langsung paste di langkah berikutnya
+3. **Simpan token ini** di temporary notepad
 
-> **Catatan Penting**: Token ini akan expire dalam 24 jam. Jika expired, login lagi untuk dapat token baru.
+> **Jika pakai Environment Variable**: Buka tab Environment `Local Development` → paste token ke field `token` → Save
+
+> **Catatan Penting**: Token ini akan expire dalam **24 jam**. Jika expired, login lagi untuk dapat token baru.
+
+### ⚠️ Jika Gagal:
+
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `401 "Email atau password salah"` | Email atau password salah | Pastikan email & password sama persis dengan saat register |
+| `400 "Email dan Password wajib diisi"` | Body kosong | Pastikan body sudah diisi dengan benar |
 
 ---
 
-### 🔐 Langkah 3: Cara Menggunakan Token di Request Lain
+## 🔐 Langkah 3: Cara Menggunakan Token di Request Lain
 
-**Setiap request yang butuh autentikasi harus pakai token!**
+**Setiap request yang butuh autentikasi HARUS pakai token!**
 
-Caranya:
+### Step-by-Step di Postman:
+
 1. **Buka tab baru** untuk request
 2. **Setelah memilih method dan URL**, klik tab **`Headers`** (di bawah kolom URL)
-3. **Tambahkan header baru**:
+3. **Tambahkan header baru** dengan cara:
 
-| Key | Value |
-|-----|-------|
-| `Authorization` | `Bearer TOKEN_ANDA_DISINI` |
-
-**Contoh tampilan di Postman:**
 ```
 Key:    Authorization
 Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
-> **Pastikan ada spasi** antara `Bearer` dan token!
-> Format: `Bearer <spasi> <token>`
+> ⚠️ **PENTING:**
+> - **Pastikan ada spasi** antara `Bearer` dan token!
+> - Format yang benar: `Bearer <spasi> <token>`
+> - Jika pakai Environment Variable, value-nya: `Bearer {{token}}`
+
+### Cara Cepat (Pakai Environment Variable):
+
+Jika sudah mengatur environment variable di Langkah 0:
+1. Klik tab **`Headers`**
+2. Isi:
+   - Key: `Authorization`
+   - Value: `Bearer {{token}}`
+3. Token akan otomatis terisi dari environment!
 
 ---
 
-### 📂 Langkah 4: Cek Kategori
+## 📂 Langkah 4: Cek Semua Kategori
+
+**Tujuan**: Melihat daftar kategori yang tersedia (default + custom)
+
+### Step-by-Step:
 
 1. **Buka tab baru**
 2. **Method**: `GET`
-3. **URL**: `http://localhost:5000/api/categories`
+3. **URL**:
+   ```
+   http://localhost:5000/api/categories
+   ```
 4. **Tab Headers**: Tambahkan `Authorization: Bearer <token_anda>`
 5. **Klik `Send`**
 
-**Expected Response:**
+### Expected Response (200 OK):
+
 ```json
 {
     "count": 6,
@@ -1039,21 +1112,32 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         { "id": 1, "name": "Gaji", "type": "income", "icon": "briefcase" },
         { "id": 2, "name": "Freelance", "type": "income", "icon": "laptop" },
         { "id": 3, "name": "Makanan", "type": "expense", "icon": "utensils" },
-        ...
+        { "id": 4, "name": "Transport", "type": "expense", "icon": "car" },
+        { "id": 5, "name": "Belanja", "type": "expense", "icon": "shopping-bag" },
+        { "id": 6, "name": "Tagihan", "type": "expense", "icon": "file-text" }
     ]
 }
 ```
 
-> **Catatan**: Simpan `category_id` yang akan digunakan untuk transaksi!
+> **Catatan**: Perhatikan `id` dari kategori yang akan digunakan untuk transaksi!
+> - `id: 1` → Gaji (income)
+> - `id: 3` → Makanan (expense)
 
 ---
 
-### 💰 Langkah 5: Tambah Transaksi
+## ➕ Langkah 5: Tambah Transaksi (Income)
+
+**Tujuan**: Mencatat pemasukan/pendapatan
+
+### Step-by-Step:
 
 1. **Buka tab baru**
 2. **Method**: `POST`
-3. **URL**: `http://localhost:5000/api/transactions`
-4. **Tab Headers**: `Authorization: Bearer <token_anda>`
+3. **URL**:
+   ```
+   http://localhost:5000/api/transactions
+   ```
+4. **Tab Headers**: Tambahkan `Authorization: Bearer <token_anda>`
 5. **Tab Body** → `raw` → `JSON`:
 
 ```json
@@ -1068,7 +1152,8 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 6. **Klik `Send`**
 
-**Expected Response (201):**
+### Expected Response (201 Created):
+
 ```json
 {
     "message": "Transaksi berhasil ditambahkan",
@@ -1079,56 +1164,172 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         "type": "income",
         "amount": "5000000.00",
         "description": "Gaji bulanan Agustus",
-        "date": "2026-08-19"
+        "transaction_date": "2026-08-19"
     }
+}
+```
+
+### Tambah Transaksi Expense (Pengeluaran)
+
+Ulangi langkah di atas dengan body berikut:
+
+```json
+{
+    "category_id": 3,
+    "type": "expense",
+    "amount": 75000,
+    "description": "Makan siang di warteg",
+    "date": "2026-08-19"
 }
 ```
 
 ---
 
-### 📋 Langkah 6: Lihat Semua Transaksi
+## 📋 Langkah 6: Lihat Semua Transaksi
+
+**Tujuan**: Melihat daftar seluruh transaksi yang sudah dicatat
+
+### Step-by-Step:
 
 1. **Method**: `GET`
-2. **URL**: `http://localhost:5000/api/transactions`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions
+   ```
+3. **Tab Headers**: Tambahkan `Authorization: Bearer <token_anda>`
+4. **Klik `Send`**
+
+### Expected Response (200 OK):
+
+```json
+{
+    "count": 2,
+    "transactions": [
+        {
+            "id": 2,
+            "user_id": 1,
+            "category_id": 3,
+            "type": "expense",
+            "amount": "75000.00",
+            "description": "Makan siang di warteg",
+            "transaction_date": "2026-08-19",
+            "category_name": "Makanan",
+            "category_icon": "utensils"
+        },
+        {
+            "id": 1,
+            "user_id": 1,
+            "category_id": 1,
+            "type": "income",
+            "amount": "5000000.00",
+            "description": "Gaji bulanan Agustus",
+            "transaction_date": "2026-08-19",
+            "category_name": "Gaji",
+            "category_icon": "briefcase"
+        }
+    ]
+}
+```
+
+### Filter Transaksi per Bulan & Tahun:
+
+1. **Method**: `GET`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions?month=8&year=2026
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
+
+> Hasil hanya akan menampilkan transaksi di bulan Agustus 2026.
 
 ---
 
-### 📊 Langkah 7: Lihat Ringkasan Keuangan
+## 📊 Langkah 7: Lihat Ringkasan Keuangan (Summary)
+
+**Tujuan**: Melihat total saldo, total pemasukan, dan total pengeluaran
+
+### Step-by-Step:
 
 1. **Method**: `GET`
-2. **URL**: `http://localhost:5000/api/transactions/summary?month=8&year=2026`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions/summary?month=8&year=2026
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
-**Expected Response:**
+### Expected Response (200 OK):
+
 ```json
 {
     "month": 8,
     "year": 2026,
     "totalIncome": 5000000,
-    "totalExpense": 0,
-    "balance": 5000000,
-    "netIncome": 5000000
+    "totalExpense": 75000,
+    "balance": 4925000,
+    "netIncome": 4925000
 }
 ```
 
+### Keterangan Field:
+
+| Field | Penjelasan |
+|-------|------------|
+| `totalIncome` | Total pemasukan di bulan tersebut |
+| `totalExpense` | Total pengeluaran di bulan tersebut |
+| `balance` | Total saldo keseluruhan (semua waktu) |
+| `netIncome` | Selisih income - expense di bulan tersebut |
+
 ---
 
-### 📈 Langkah 8: Lihat Expense per Kategori
+## 📈 Langkah 8: Lihat Pengeluaran per Kategori (Untuk Pie Chart)
+
+**Tujuan**: Melihat breakdown pengeluaran berdasarkan kategori
+
+### Step-by-Step:
 
 1. **Method**: `GET`
-2. **URL**: `http://localhost:5000/api/transactions/summary/category?month=8&year=2026`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions/summary/category?month=8&year=2026
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
+### Expected Response (200 OK):
+
+```json
+{
+    "month": 8,
+    "year": 2026,
+    "categories": [
+        {
+            "category_name": "Makanan",
+            "icon": "utensils",
+            "total": 75000,
+            "transaction_count": 1
+        }
+    ]
+}
+```
+
+> **Catatan**: Hanya kategori yang punya pengeluaran di bulan tersebut yang akan muncul. Berguna untuk membuat **Pie Chart** di frontend.
+
 ---
 
-### ✏️ Langkah 9: Edit Transaksi
+## ✏️ Langkah 9: Edit Transaksi
+
+**Tujuan**: Mengubah data transaksi yang sudah ada
+
+### Step-by-Step:
 
 1. **Method**: `PUT`
-2. **URL**: `http://localhost:5000/api/transactions/1`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions/1
+   ```
+   > Angka `1` di akhir URL adalah **ID transaksi** yang ingin diedit. Ganti sesuai ID transaksi Anda.
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Tab Body** → `raw` → `JSON`:
 
@@ -1144,24 +1345,137 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 5. **Klik `Send`**
 
+### Expected Response (200 OK):
+
+```json
+{
+    "message": "Transaksi berhasil diupdate",
+    "transaction": {
+        "id": 1,
+        "user_id": 1,
+        "category_id": 1,
+        "type": "income",
+        "amount": "5500000.00",
+        "description": "Gaji bulanan Agustus (updated)",
+        "transaction_date": "2026-08-19"
+    }
+}
+```
+
+### ⚠️ Jika Gagal:
+
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `404 "Transaksi tidak ditemukan"` | ID transaksi tidak ada atau bukan milik user | Cek ID transaksi dari Langkah 6 |
+
 ---
 
-### 🗑️ Langkah 10: Hapus Transaksi
+## 🗑️ Langkah 10: Hapus Transaksi
+
+**Tujuan**: Menghapus transaksi yang sudah tidak diperlukan
+
+### Step-by-Step:
 
 1. **Method**: `DELETE`
-2. **URL**: `http://localhost:5000/api/transactions/1`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions/1
+   ```
+   > Ganti `1` dengan ID transaksi yang ingin dihapus.
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
+### Expected Response (200 OK):
+
+```json
+{
+    "message": "Transaksi berhasil dihapus"
+}
+```
+
 ---
 
-### 💰 Langkah 11: Tambah Budget
+## ➕ Langkah 11: Tambah Kategori Custom
 
-**Tujuan**: Membuat batas pengeluaran untuk suatu kategori di bulan tertentu
+**Tujuan**: Membuat kategori sendiri selain kategori default
+
+### Step-by-Step:
 
 1. **Buka tab baru**
 2. **Method**: `POST`
-3. **URL**: `http://localhost:5000/api/budgets`
+3. **URL**:
+   ```
+   http://localhost:5000/api/categories
+   ```
+4. **Tab Headers**: `Authorization: Bearer <token_anda>`
+5. **Tab Body** → `raw` → `JSON`:
+
+```json
+{
+    "name": "Hiburan",
+    "type": "expense",
+    "icon": "film"
+}
+```
+
+6. **Klik `Send`**
+
+### Expected Response (201 Created):
+
+```json
+{
+    "message": "Kategori berhasil ditambahkan",
+    "category": {
+        "id": 7,
+        "name": "Hiburan",
+        "type": "expense",
+        "icon": "film",
+        "user_id": 1
+    }
+}
+```
+
+---
+
+## 🗑️ Langkah 12: Hapus Kategori Custom
+
+**Tujuan**: Menghapus kategori custom yang dibuat user
+
+### Step-by-Step:
+
+1. **Method**: `DELETE`
+2. **URL**:
+   ```
+   http://localhost:5000/api/categories/7
+   ```
+   > Ganti `7` dengan ID kategori custom yang ingin dihapus.
+3. **Tab Headers**: `Authorization: Bearer <token_anda>`
+4. **Klik `Send`**
+
+### Expected Response (200 OK):
+
+```json
+{
+    "message": "Category berhasil dihapus"
+}
+```
+
+> **Catatan**: Kategori default (Gaji, Makanan, dll) tidak bisa dihapus karena `user_id`-nya `NULL`.
+
+---
+
+## 💰 Langkah 13: Tambah Budget (Anggaran)
+
+**Tujuan**: Membuat batas pengeluaran untuk suatu kategori di bulan tertentu
+
+### Step-by-Step:
+
+1. **Buka tab baru**
+2. **Method**: `POST`
+3. **URL**:
+   ```
+   http://localhost:5000/api/budgets
+   ```
 4. **Tab Headers**: `Authorization: Bearer <token_anda>`
 5. **Tab Body** → `raw` → `JSON`:
 
@@ -1174,17 +1488,18 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-> **Keterangan**: `category_id: 3` adalah kategori "Makanan". Artinya budget makanan bulan Agustus 2026 adalah Rp 500.000.
+> **Keterangan**: `category_id: 3` adalah kategori "Makanan". Artinya budget makanan bulan Agustus 2026 adalah **Rp 500.000**.
 
 6. **Klik `Send`**
 
-**Expected Response (201):**
+### Expected Response (201 Created):
+
 ```json
 {
     "message": "Budget berhasil ditambahkan",
     "budget": {
         "id": 1,
-        "user_id": "uuid-anda",
+        "user_id": 1,
         "category_id": 3,
         "amount": "500000.00",
         "month": 8,
@@ -1193,25 +1508,38 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-> **Catatan**: Jika muncul error 409, berarti budget untuk kategori & bulan tersebut sudah ada.
+### ⚠️ Jika Gagal:
+
+| Error | Penyebab | Solusi |
+|-------|----------|--------|
+| `409 "Budget untuk kategori ini sudah ada"` | Budget untuk kategori & bulan yang sama sudah dibuat | Update budget yang sudah ada atau gunakan kategori/bulan lain |
+| `400 "Month harus antara 1 dan 12"` | Angka bulan tidak valid | Gunakan angka 1-12 |
 
 ---
 
-### 📋 Langkah 12: Lihat Semua Budget
+## 📋 Langkah 14: Lihat Semua Budget
+
+**Tujuan**: Melihat daftar semua anggaran yang sudah dibuat
+
+### Step-by-Step:
 
 1. **Method**: `GET`
-2. **URL**: `http://localhost:5000/api/budgets`
+2. **URL**:
+   ```
+   http://localhost:5000/api/budgets
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
-**Expected Response:**
+### Expected Response (200 OK):
+
 ```json
 {
     "count": 1,
     "budgets": [
         {
             "id": 1,
-            "user_id": "uuid-anda",
+            "user_id": 1,
             "category_id": 3,
             "amount": "500000.00",
             "month": 8,
@@ -1223,24 +1551,32 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-**Filter by bulan & tahun:**
-- URL: `http://localhost:5000/api/budgets?month=8&year=2026`
-
----
-
-### 🔍 Langkah 13: Lihat Budget per Kategori Tertentu
+### Filter Budget per Bulan & Tahun:
 
 1. **Method**: `GET`
-2. **URL**: `http://localhost:5000/api/budgets?month=8&year=2026`
+2. **URL**:
+   ```
+   http://localhost:5000/api/budgets?month=8&year=2026
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
+> Hanya budget di bulan Agustus 2026 yang akan muncul.
+
 ---
 
-### ✏️ Langkah 14: Edit Budget
+## ✏️ Langkah 15: Edit Budget
+
+**Tujuan**: Mengubah besaran budget yang sudah ada
+
+### Step-by-Step:
 
 1. **Method**: `PUT`
-2. **URL**: `http://localhost:5000/api/budgets/1`
+2. **URL**:
+   ```
+   http://localhost:5000/api/budgets/1
+   ```
+   > Angka `1` adalah ID budget yang ingin diedit.
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Tab Body** → `raw` → `JSON`:
 
@@ -1252,17 +1588,18 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-> **Keterangan**: Update budget makanan dari Rp 500.000 menjadi Rp 600.000.
+> **Keterangan**: Update budget makanan dari **Rp 500.000** menjadi **Rp 600.000**.
 
 5. **Klik `Send`**
 
-**Expected Response:**
+### Expected Response (200 OK):
+
 ```json
 {
     "message": "Budget berhasil diupdate",
     "budget": {
         "id": 1,
-        "user_id": "uuid-anda",
+        "user_id": 1,
         "category_id": 3,
         "amount": "600000.00",
         "month": 8,
@@ -1273,55 +1610,189 @@ Value:  Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-### 🗑️ Langkah 15: Hapus Budget
+## 🗑️ Langkah 16: Hapus Budget
+
+**Tujuan**: Menghapus budget yang sudah tidak diperlukan
+
+### Step-by-Step:
 
 1. **Method**: `DELETE`
-2. **URL**: `http://localhost:5000/api/budgets/1`
+2. **URL**:
+   ```
+   http://localhost:5000/api/budgets/1
+   ```
 3. **Tab Headers**: `Authorization: Bearer <token_anda>`
 4. **Klik `Send`**
 
-**Expected Response:**
+### Expected Response (200 OK):
+
 ```json
 {
     "message": "Budget berhasil dihapus"
 }
-```**
+```
 
 ---
 
-### ⚠️ Troubleshooting di Postman
+## 🧪 Langkah 17: Test Endpoint Root (Tanpa Token)
 
-| Error | Penyebab | Solusi |
-|-------|----------|--------|
-| `401 Unauthorized` | Token tidak ada atau expired | Login ulang, dapatkan token baru |
-| `401 "Akses ditolak, token tidak ditemukan"` | Lupa pasang header Authorization | Tambahkan header `Authorization: Bearer <token>` |
-| `401 "Token tidak valid"` | Token salah atau expired | Copy token dengan benar dari response login |
-| `400 "Semua field wajib diisi"` | Body kosong atau ada field yang missing | Pastikan semua field diisi di body JSON |
-| `409 "Email atau Username sudah terdaftar"` | Email/username sudah dipakai | Gunakan email/username lain saat register |
-| `409 "Budget untuk kategori ini sudah ada"` | Budget untuk kategori & bulan yang sama sudah dibuat | Update budget yang sudah ada atau gunakan kategori/bulan lain |
-| `500 "Server error"` | Server mati atau ada error di backend | Cek terminal backend, pastikan server jalan |
-| `ECONNREFUSED` | Server tidak jalan | Jalankan `npm run dev` di backend |
+**Tujuan**: Memastikan server berjalan dengan benar
+
+### Step-by-Step:
+
+1. **Method**: `GET`
+2. **URL**:
+   ```
+   http://localhost:5000/
+   ```
+3. **Tidak perlu Headers** (endpoint ini tidak butuh autentikasi)
+4. **Klik `Send`**
+
+### Expected Response (200 OK):
+
+```json
+{
+    "message": "API Catatan Keuangan Berjalan!"
+}
+```
 
 ---
 
-### 📋 Ringkasan Order Testing
+## 🧪 Langkah 18: Test Tanpa Token (Harus Gagal)
 
-| Urutan | Method | Endpoint | Keterangan |
-|--------|--------|----------|------------|
-| 1 | POST | `/api/auth/register` | Register dulu (tanpa token) |
-| 2 | POST | `/api/auth/login` | Login, **AMBIL TOKEN** dari response |
-| 3 | GET | `/api/categories` | Cek kategori (pakai token) |
-| 4 | POST | `/api/transactions` | Tambah transaksi (pakai token) |
-| 5 | GET | `/api/transactions` | Lihat transaksi (pakai token) |
-| 6 | GET | `/api/transactions/summary` | Lihat ringkasan (pakai token) |
-| 7 | GET | `/api/transactions/summary/category` | Lihat expense/kategori (pakai token) |
-| 8 | PUT | `/api/transactions/:id` | Edit transaksi (pakai token) |
-| 9 | DELETE | `/api/transactions/:id` | Hapus transaksi (pakai token) |
-| 10 | POST | `/api/budgets` | Tambah budget (pakai token) |
-| 11 | GET | `/api/budgets` | Lihat semua budget (pakai token) |
-| 12 | GET | `/api/budgets?month=8&year=2026` | Lihat budget per bulan (pakai token) |
-| 13 | PUT | `/api/budgets/:id` | Edit budget (pakai token) |
-| 14 | DELETE | `/api/budgets/:id` | Hapus budget (pakai token) |
+**Tujuan**: Memastikan middleware autentikasi berfungsi dengan benar
+
+### Step-by-Step:
+
+1. **Buka tab baru**
+2. **Method**: `GET`
+3. **URL**:
+   ```
+   http://localhost:5000/api/transactions
+   ```
+4. **JANGAN pasang header Authorization** (biarkan kosong)
+5. **Klik `Send`**
+
+### Expected Response (401 Unauthorized):
+
+```json
+{
+    "message": "Akses ditolak, token tidak ditemukan"
+}
+```
+
+> Jika response-nya **401**, berarti middleware autentikasi **berhasil berfungsi**! Route yang dilindungi tidak bisa diakses tanpa token.
+
+---
+
+## 🧪 Langkah 19: Test Dengan Token Salah (Harus Gagal)
+
+**Tujuan**: Memastikan verifikasi token berfungsi
+
+### Step-by-Step:
+
+1. **Method**: `GET`
+2. **URL**:
+   ```
+   http://localhost:5000/api/transactions
+   ```
+3. **Tab Headers**:
+   - Key: `Authorization`
+   - Value: `Bearer token_yang_salah_atau_abcdefg`
+4. **Klik `Send`**
+
+### Expected Response (401 Unauthorized):
+
+```json
+{
+    "message": "Token tidak valid"
+}
+```
+
+---
+
+## 📋 Ringkasan Order Testing (Lengkap)
+
+| Urutan | Method | Endpoint | Butuh Token | Keterangan |
+|--------|--------|----------|-------------|------------|
+| 1 | GET | `/` | ❌ | Cek server berjalan |
+| 2 | POST | `/api/auth/register` | ❌ | Register user baru |
+| 3 | POST | `/api/auth/login` | ❌ | Login, **SALIN TOKEN** |
+| 4 | GET | `/api/categories` | ✅ | Lihat semua kategori |
+| 5 | POST | `/api/categories` | ✅ | Tambah kategori custom |
+| 6 | POST | `/api/transactions` | ✅ | Tambah transaksi income |
+| 7 | POST | `/api/transactions` | ✅ | Tambah transaksi expense |
+| 8 | GET | `/api/transactions` | ✅ | Lihat semua transaksi |
+| 9 | GET | `/api/transactions?month=8&year=2026` | ✅ | Filter transaksi per bulan |
+| 10 | GET | `/api/transactions/summary?month=8&year=2026` | ✅ | Ringkasan keuangan |
+| 11 | GET | `/api/transactions/summary/category?month=8&year=2026` | ✅ | Pengeluaran per kategori |
+| 12 | PUT | `/api/transactions/:id` | ✅ | Edit transaksi |
+| 13 | DELETE | `/api/transactions/:id` | ✅ | Hapus transaksi |
+| 14 | POST | `/api/budgets` | ✅ | Tambah budget |
+| 15 | GET | `/api/budgets` | ✅ | Lihat semua budget |
+| 16 | GET | `/api/budgets?month=8&year=2026` | ✅ | Filter budget per bulan |
+| 17 | PUT | `/api/budgets/:id` | ✅ | Edit budget |
+| 18 | DELETE | `/api/budgets/:id` | ✅ | Hapus budget |
+| 19 | DELETE | `/api/categories/:id` | ✅ | Hapus kategori custom |
+| 20 | GET | `/api/transactions` | ❌ | Test tanpa token (harus 401) |
+| 21 | GET | `/api/transactions` | ⚠️ Token Salah | Test token salah (harus 401) |
+
+---
+
+## ⚠️ Troubleshooting Lengkap di Postman
+
+### Error Umum & Solusi
+
+| Error | HTTP Status | Penyebab | Solusi |
+|-------|-------------|----------|--------|
+| `ECONNREFUSED` | - | Server tidak jalan | Jalankan `npm run dev` di terminal backend |
+| `Akses ditolak, token tidak ditemukan` | 401 | Lupa pasang header Authorization | Tambahkan header `Authorization: Bearer <token>` |
+| `Token tidak valid` | 401 | Token salah atau expired | Copy token dengan benar dari response login, atau login ulang |
+| `Email atau password salah` | 401 | Email/password salah | Pastikan email & password sama persis dengan saat register |
+| `Semua field wajib diisi` | 400 | Body kosong atau ada field missing | Pastikan semua field diisi di body JSON |
+| `Type dan amount wajib diisi` | 400 | Field type/amount kosong | Isi field `type` dan `amount` di body |
+| `Type harus income atau expense` | 400 | Type tidak valid | Gunakan `"income"` atau `"expense"` saja |
+| `Email atau Username sudah terdaftar` | 409 | Email/username sudah dipakai | Gunakan email/username lain saat register |
+| `Budget untuk kategori ini sudah ada` | 409 | Budget ganda di kategori & bulan sama | Update budget yang sudah ada atau gunakan kategori/bulan lain |
+| `Transaksi tidak ditemukan` | 404 | ID transaksi salah atau bukan milik user | Cek ID dari response GET transactions |
+| `Budget tidak ditemukan` | 404 | ID budget salah atau bukan milik user | Cek ID dari response GET budgets |
+| `Category tidak ditemukan` | 404 | ID kategori salah atau kategori default | Cek ID dari response GET categories |
+| `Server error` | 500 | Error di backend | Cek terminal backend untuk melihat error detail |
+
+### Tips Postman
+
+1. **Selalu cek tab `Body`** sebelum kirim POST/PUT - pastikan sudah pilih `raw` → `JSON`
+2. **Selalu cek tab `Headers`** untuk GET/PUT/DELETE yang butuh token
+3. **Lihat tab `Status`** di bawah response untuk mengecek HTTP status code
+4. **Gunakan `Pretty`** di response untuk melihat JSON yang rapi
+5. **Save request** ke collection agar bisa dijalankan ulang kapan saja
+
+---
+
+## 📋 Checklist Testing Tahap 2
+
+- [ ] Register user berhasil (status 201, password ter-encrypt)
+- [ ] Login user berhasil (status 200, menghasilkan JWT token)
+- [ ] Endpoint `/` berfungsi (status 200)
+- [ ] Tanpa token → 401 Unauthorized
+- [ ] Token salah → 401 Token tidak valid
+- [ ] GET categories berhasil (menampilkan kategori default)
+- [ ] POST categories berhasil (kategori custom tersimpan)
+- [ ] POST transaction income berhasil
+- [ ] POST transaction expense berhasil
+- [ ] GET transactions berhasil (menampilkan semua transaksi)
+- [ ] GET transactions dengan filter bulan/tahun berhasil
+- [ ] GET summary berhasil (total income, expense, balance benar)
+- [ ] GET summary/category berhasil (data untuk pie chart)
+- [ ] PUT transaction berhasil (data terupdate)
+- [ ] DELETE transaction berhasil (data terhapus)
+- [ ] POST budget berhasil
+- [ ] GET budgets berhasil
+- [ ] GET budgets dengan filter bulan/tahun berhasil
+- [ ] PUT budget berhasil (amount terupdate)
+- [ ] DELETE budget berhasil
+- [ ] DELETE category custom berhasil
+- [ ] Validasi error berfungsi (field kosong, type salah, dll)
 
 ---
 

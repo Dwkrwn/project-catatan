@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * Server Entry Point
  * Initialize dan start Express server
@@ -48,3 +49,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 module.exports = server;
+=======
+require('dotenv').config();
+require('./src/server');
+>>>>>>> 7f949e20370a5fd93853fbd9d835127005c5b18d

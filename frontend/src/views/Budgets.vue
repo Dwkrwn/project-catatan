@@ -46,6 +46,9 @@
               </div>
               <div>
                 <h3 class="budget-name">{{ b.category_name }}</h3>
+                <span :class="['category-type-badge', b.category_type]">
+                  {{ b.category_type === "income" ? "Pemasukan" : "Pengeluaran" }}
+                </span>
                 <p class="budget-period">
                   {{ monthNames[b.month] }} {{ b.year }}
                 </p>
@@ -83,11 +86,33 @@
       >
         <form @submit.prevent="handleSubmit" class="modal-form">
           <div class="form-group">
-            <label class="form-label">Kategori Pengeluaran</label>
+            <label class="form-label">Tipe</label>
+            <div class="type-toggle">
+              <button
+                type="button"
+                :class="['type-btn', { active: form.type === 'expense' }]"
+                @click="form.type = 'expense'"
+              >
+                <ArrowDownRight :size="16" />
+                Pengeluaran
+              </button>
+              <button
+                type="button"
+                :class="['type-btn income', { active: form.type === 'income' }]"
+                @click="form.type = 'income'"
+              >
+                <ArrowUpRight :size="16" />
+                Pemasukan
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Kategori</label>
             <select v-model="form.category_id" class="form-input" required>
               <option value="">Pilih Kategori</option>
               <option
-                v-for="c in categoryStore.expenseCategories"
+                v-for="c in budgetCategories"
                 :key="c.id"
                 :value="c.id"
               >
@@ -146,7 +171,7 @@ import MainLayout from "../components/MainLayout.vue";
 import Modal from "../components/Model.vue";
 import AlertMessage from "../components/AlertMessage.vue";
 import LoadingSpinner from "../components/LoadingSpinner.vue";
-import { Plus, Filter, Pencil, Trash2, PiggyBank } from "lucide-vue-next";
+import { Plus, Filter, Pencil, Trash2, PiggyBank, ArrowUpRight, ArrowDownRight } from "lucide-vue-next";
 
 const budgetStore = useBudgetStore();
 const categoryStore = useCategoryStore();
@@ -160,11 +185,18 @@ const editingId = ref(null);
 const alert = ref({ show: false, message: "", type: "success" });
 
 const form = ref({
+  type: "expense",
   category_id: "",
   amount: "",
   month: new Date().getMonth() + 1,
   year: new Date().getFullYear(),
 });
+
+const budgetCategories = computed(() =>
+  form.value.type === "income"
+    ? categoryStore.incomeCategories
+    : categoryStore.expenseCategories
+);
 
 const monthNames = [
   "",
@@ -199,6 +231,7 @@ const fetchData = () => {
 const openAddModal = () => {
   editingId.value = null;
   form.value = {
+    type: "expense",
     category_id: "",
     amount: "",
     month: filterMonth.value || new Date().getMonth() + 1,
@@ -210,6 +243,10 @@ const openAddModal = () => {
 const openEditModal = (budget) => {
   editingId.value = budget.id;
   form.value = {
+    type:
+      budget.category_type ||
+      categoryStore.getCategoryById(budget.category_id)?.type ||
+      "expense",
     category_id: budget.category_id,
     amount: budget.amount,
     month: budget.month,
@@ -325,6 +362,32 @@ onMounted(() => {
   font-size: 12px;
 }
 
+.type-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #ef4444;
+  transition: all 0.2s;
+}
+
+.type-btn.income { color: #16a34a; }
+.type-btn.active { background: #fef2f2; border-color: #ef4444; }
+.type-btn.income.active { background: #f0fdf4; border-color: #16a34a; }
+
 .budget-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -381,6 +444,25 @@ onMounted(() => {
   font-size: 12px;
   color: #9ca3af;
   margin: 4px 0 0 0;
+}
+
+.category-type-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-top: 6px;
+}
+
+.category-type-badge.expense {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.category-type-badge.income {
+  background: #f0fdf4;
+  color: #16a34a;
 }
 
 .budget-amount {

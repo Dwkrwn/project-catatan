@@ -34,3 +34,8 @@ exports.getExpenseByCategory = asyncHandler(async (req, res) => {
     const result = await transactionService.getExpenseByCategory(req.user.id, req.query);
     res.json(result);
 });
+
+exports.getIncomeByCategory = asyncHandler(async (req, res) => {
+    const result = await transactionService.getIncomeByCategory(req.user.id, req.query);
+    res.json(result);
+});

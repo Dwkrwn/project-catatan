@@ -2,8 +2,9 @@ const ApiError = require('../utils/ApiError');
 const transactionModel = require('../models/transactionModel');
 
 const getTransactions = async (userId, query) => {
-    const { month, year } = query;
-    const transactions = await transactionModel.getAll(userId, month, year);
+    const { month, year, type } = query;
+    const validType = ['income', 'expense'].includes(type) ? type : null;
+    const transactions = await transactionModel.getAll(userId, month, year, validType);
     return { count: transactions.length, transactions };
 };
 
@@ -110,6 +111,25 @@ const getExpenseByCategory = async (userId, query) => {
     };
 };
 
+const getIncomeByCategory = async (userId, query) => {
+    const { month, year } = query;
+
+    const currentMonth = month || new Date().getMonth() + 1;
+    const currentYear = year || new Date().getFullYear();
+
+    const categories = await transactionModel.getIncomeByCategory(
+        userId,
+        currentMonth,
+        currentYear
+    );
+
+    return {
+        month: parseInt(currentMonth),
+        year: parseInt(currentYear),
+        categories,
+    };
+};
+
 module.exports = {
     getTransactions,
     addTransaction,
@@ -117,4 +137,5 @@ module.exports = {
     deleteTransaction,
     getSummary,
     getExpenseByCategory,
+    getIncomeByCategory,
 };

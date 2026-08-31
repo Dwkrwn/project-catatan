@@ -1,6 +1,20 @@
 <template>
   <MainLayout>
     <div class="dashboard">
+      <!-- Filter Bulan/Tahun -->
+      <div class="page-actions">
+        <div class="filter-group">
+          <select v-model="selectedMonth" class="filter-select" @change="fetchData">
+            <option v-for="m in 12" :key="m" :value="m">
+              {{ monthNames[m] }}
+            </option>
+          </select>
+          <select v-model="selectedYear" class="filter-select" @change="fetchData">
+            <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Summary Cards -->
       <div class="summary-cards">
         <div class="summary-card income">
@@ -40,21 +54,41 @@
         </div>
       </div>
 
-      <!-- Expense by Category -->
+      <!-- Summary by Category -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">Pengeluaran per Kategori</h2>
-          <span class="badge">{{ currentMonthName }} {{ currentYear }}</span>
+          <h2 class="section-title">Ringkasan per Kategori</h2>
+          <span class="badge">{{ selectedMonthName }} {{ selectedYear }}</span>
         </div>
 
-        <div v-if="expenseByCategory.length === 0" class="empty-state">
+        <div class="tab-group">
+          <button
+            type="button"
+            :class="['tab', { active: categoryTab === 'expense' }]"
+            @click="categoryTab = 'expense'"
+          >
+            Pengeluaran
+          </button>
+          <button
+            type="button"
+            :class="['tab income', { active: categoryTab === 'income' }]"
+            @click="categoryTab = 'income'"
+          >
+            Pemasukan
+          </button>
+        </div>
+
+        <div v-if="categoryList.length === 0" class="empty-state">
           <PieChart :size="48" color="#d1d5db" />
-          <p>Belum ada data pengeluaran bulan ini</p>
+          <p>
+            Belum ada data {{ categoryTab === "income" ? "pemasukan" : "pengeluaran" }}
+            pada bulan terpilih
+          </p>
         </div>
 
         <div v-else class="category-list">
           <div
-            v-for="item in expenseByCategory"
+            v-for="item in categoryList"
             :key="item.category_name"
             class="category-item"
           >
@@ -87,9 +121,11 @@ const transactionStore = useTransactionStore();
 
 const summary = computed(() => transactionStore.summary);
 const expenseByCategory = computed(() => transactionStore.expenseByCategory);
+const incomeByCategory = computed(() => transactionStore.incomeByCategory);
 
-const currentMonth = new Date().getMonth() + 1;
-const currentYear = new Date().getFullYear();
+const selectedMonth = ref(new Date().getMonth() + 1);
+const selectedYear = ref(new Date().getFullYear());
+const categoryTab = ref("expense");
 
 const monthNames = [
   "",
@@ -106,21 +142,31 @@ const monthNames = [
   "November",
   "Desember",
 ];
-const currentMonthName = computed(() => monthNames[currentMonth]);
+const selectedMonthName = computed(() => monthNames[selectedMonth.value]);
+
+const years = computed(() => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 5 }, (_, i) => currentYear - i);
+});
+
+const categoryList = computed(() =>
+  categoryTab.value === "income" ? incomeByCategory.value : expenseByCategory.value
+);
 
 const formatMoney = (amount) => {
   return new Intl.NumberFormat("id-ID").format(amount);
 };
 
-onMounted(async () => {
-  await Promise.all([
-    transactionStore.fetchSummary({ month: currentMonth, year: currentYear }),
-    transactionStore.fetchExpenseByCategory({
-      month: currentMonth,
-      year: currentYear,
-    }),
+const fetchData = () => {
+  const params = { month: selectedMonth.value, year: selectedYear.value };
+  Promise.all([
+    transactionStore.fetchSummary(params),
+    transactionStore.fetchExpenseByCategory(params),
+    transactionStore.fetchIncomeByCategory(params),
   ]);
-});
+};
+
+onMounted(fetchData);
 </script>
 
 <style scoped>
@@ -128,6 +174,64 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #22c55e;
+}
+
+.tab-group {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: white;
+  color: #ef4444;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab.income.active {
+  color: #16a34a;
 }
 
 .summary-cards {

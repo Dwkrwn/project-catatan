@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-const getAll = async (userId, month, year) => {
+const getAll = async (userId, month, year, type) => {
     let query = ` SELECT t.*, c.name as category_name, c.icon as category_icon
             FROM tb_transactions t LEFT JOIN tb_categories c ON t.category_id = c.id
             WHERE t.user_id = $1 `;
@@ -11,6 +11,11 @@ const getAll = async (userId, month, year) => {
         query += ` AND EXTRACT(MONTH FROM t.transaction_date) = $${params.length + 1}
             AND EXTRACT(YEAR FROM t.transaction_date) = $${params.length + 2}`;
         params.push(month, year);
+    }
+
+    if (type) {
+        query += ` AND t.type = $${params.length + 1}`;
+        params.push(type);
     }
 
     query += " ORDER BY t.transaction_date DESC, t.created_at DESC";
@@ -90,7 +95,7 @@ const getBalance = async (userId) => {
     return result.rows[0];
 };
 
-const getExpenseByCategory = async (userId, month, year) => {
+const getByCategory = async (userId, month, year, type) => {
     const result = await pool.query(
         `SELECT
                 c.name as category_name,
@@ -102,15 +107,21 @@ const getExpenseByCategory = async (userId, month, year) => {
                  AND EXTRACT(MONTH FROM t.transaction_date) = $2
                  AND EXTRACT(YEAR FROM t.transaction_date) = $3
                  AND t.user_id = $1
-                 AND t.type = 'expense'
-             WHERE c.type = 'expense' AND (c.user_id IS NULL OR c.user_id = $1)
+                 AND t.type = $4
+             WHERE c.type = $4 AND (c.user_id IS NULL OR c.user_id = $1)
              GROUP BY c.id, c.name, c.icon
              HAVING COALESCE(SUM(t.amount), 0) > 0
              ORDER BY total DESC`,
-        [userId, month, year]
+        [userId, month, year, type]
     );
     return result.rows;
 };
+
+const getExpenseByCategory = async (userId, month, year) =>
+    getByCategory(userId, month, year, 'expense');
+
+const getIncomeByCategory = async (userId, month, year) =>
+    getByCategory(userId, month, year, 'income');
 
 module.exports = {
     getAll,
@@ -122,4 +133,5 @@ module.exports = {
     getExpenseTotal,
     getBalance,
     getExpenseByCategory,
+    getIncomeByCategory,
 };

@@ -12,6 +12,11 @@
             <option value="">Semua Tahun</option>
             <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
           </select>
+          <select v-model="filterType" class="filter-select">
+            <option value="">Semua Tipe</option>
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
           <button @click="fetchData" class="btn-secondary">
             <Filter :size="16" />
             Filter
@@ -46,7 +51,7 @@
             <div class="transaction-info">
               <p class="transaction-desc">{{ t.description || 'Tanpa deskripsi' }}</p>
               <p class="transaction-meta">
-                {{ t.category_name || 'Tanpa kategori' }} &middot; {{ formatDate(t.date) }}
+                {{ t.category_name || 'Tanpa kategori' }} &middot; {{ formatDate(t.transaction_date ?? t.date) }}
               </p>
             </div>
           </div>
@@ -174,6 +179,7 @@ const transactions = computed(() => transactionStore.transactions)
 
 const filterMonth = ref('')
 const filterYear = ref(new Date().getFullYear())
+const filterType = ref('')
 const showModal = ref(false)
 const editingId = ref(null)
 
@@ -215,6 +221,7 @@ const fetchData = () => {
   const params = {}
   if (filterMonth.value) params.month = filterMonth.value
   if (filterYear.value) params.year = filterYear.value
+  if (filterType.value) params.type = filterType.value
   transactionStore.fetchTransactions(params)
 }
 
@@ -237,7 +244,7 @@ const openEditModal = (transaction) => {
     amount: transaction.amount,
     category_id: transaction.category_id,
     description: transaction.description || '',
-    date: transaction.date.split('T')[0]
+    date: transaction.transaction_date?.split('T')[0]
   }
   showModal.value = true
 }

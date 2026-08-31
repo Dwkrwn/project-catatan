@@ -6,6 +6,7 @@ export const useTransactionStore = defineStore("transactions", {
     transactions: [],
     summary: null,
     expenseByCategory: [],
+    incomeByCategory: [],
     loading: false,
     error: null,
   }),
@@ -82,6 +83,19 @@ export const useTransactionStore = defineStore("transactions", {
           params,
         });
         this.expenseByCategory = response.data.categories;
+      } catch (err) {
+        this.error =
+          err.response?.data?.message || "Gagal memuat data kategori";
+      }
+    },
+
+    async fetchIncomeByCategory(params = {}) {
+      try {
+        const response = await api.get(
+          "/api/transactions/summary/category/income",
+          { params },
+        );
+        this.incomeByCategory = response.data.categories;
       } catch (err) {
         this.error =
           err.response?.data?.message || "Gagal memuat data kategori";

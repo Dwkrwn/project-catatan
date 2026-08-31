@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 const getAll = async (userId, month, year) => {
     let query = `
-      SELECT b.*, c.name as category_name, c.icon as category_icon
+      SELECT b.*, c.name as category_name, c.icon as category_icon, c.type as category_type
       FROM tb_budgets b
       LEFT JOIN tb_categories c ON b.category_id = c.id
       WHERE b.user_id = $1

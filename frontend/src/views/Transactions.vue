@@ -52,6 +52,13 @@
               <p class="transaction-desc">{{ t.description || 'Tanpa deskripsi' }}</p>
               <p class="transaction-meta">
                 {{ t.category_name || 'Tanpa kategori' }} &middot; {{ formatDate(t.transaction_date ?? t.date) }}
+                <span v-if="t.income_budget_id && t.type === 'expense'" class="source-badge">
+                  dari {{ t.income_budget_name || 'pemasukan' }}
+                </span>
+                <span v-if="t.is_auto" class="source-badge auto">
+                  <Sparkles :size="11" />
+                  otomatis dari budget
+                </span>
               </p>
             </div>
           </div>
@@ -59,7 +66,7 @@
             <p :class="['transaction-amount', t.type]">
               {{ t.type === 'income' ? '+' : '-' }} Rp {{ formatMoney(t.amount) }}
             </p>
-            <div class="transaction-actions">
+            <div v-if="!t.is_auto" class="transaction-actions">
               <button @click="openEditModal(t)" class="action-btn">
                 <Pencil :size="14" />
               </button>
@@ -127,6 +134,16 @@
             </select>
           </div>
 
+          <div v-if="form.type === 'expense'" class="form-group">
+            <label class="form-label">Diambil dari Pemasukan (opsional)</label>
+            <select v-model="form.income_budget_id" class="form-input">
+              <option :value="null">Tidak mengurangi pemasukan mana pun</option>
+              <option v-for="ib in incomeBudgetOptions" :key="ib.id" :value="ib.id">
+                {{ ib.category_name }} (sisa {{ formatMoney(Math.max(0, ib.amount - ib.drawn)) }})
+              </option>
+            </select>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Deskripsi</label>
             <input
@@ -163,17 +180,19 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useTransactionStore } from '../stores/transactions'
 import { useCategoryStore } from '../stores/categories'
+import { useBudgetStore } from '../stores/budgets'
 import MainLayout from '../components/MainLayout.vue'
 import Modal from '../components/Model.vue'
 import AlertMessage from '../components/AlertMessage.vue'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import {
   Plus, Filter, Pencil, Trash2,
-  ArrowUpRight, ArrowDownRight, ArrowLeftRight
+  ArrowUpRight, ArrowDownRight, ArrowLeftRight, Sparkles
 } from 'lucide-vue-next'
 
 const transactionStore = useTransactionStore()
 const categoryStore = useCategoryStore()
+const budgetStore = useBudgetStore()
 
 const transactions = computed(() => transactionStore.transactions)
 
@@ -190,7 +209,8 @@ const form = ref({
   amount: '',
   category_id: '',
   description: '',
-  date: new Date().toISOString().split('T')[0]
+  date: new Date().toISOString().split('T')[0],
+  income_budget_id: null
 })
 
 const monthNames = [
@@ -209,6 +229,16 @@ const filteredCategories = computed(() => {
     : categoryStore.expenseCategories
 })
 
+const incomeBudgetOptions = computed(() => {
+  if (form.value.type !== 'expense') return []
+  const [year, month] = form.value.date.split('-')
+  return budgetStore.budgets.filter(
+    (b) => b.category_type === 'income' &&
+      String(b.year) === String(year) &&
+      String(b.month) === String(parseInt(month, 10))
+  )
+})
+
 const formatMoney = (amount) => new Intl.NumberFormat('id-ID').format(amount)
 
 const formatDate = (date) => {
@@ -225,6 +255,12 @@ const fetchData = () => {
   transactionStore.fetchTransactions(params)
 }
 
+const loadIncomeBudgets = () => {
+  if (form.value.type !== 'expense' || !form.value.date) return
+  const [year, month] = form.value.date.split('-')
+  budgetStore.fetchBudgets({ month: parseInt(month, 10), year })
+}
+
 const openAddModal = () => {
   editingId.value = null
   form.value = {
@@ -232,9 +268,11 @@ const openAddModal = () => {
     amount: '',
     category_id: '',
     description: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    income_budget_id: null
   }
   showModal.value = true
+  loadIncomeBudgets()
 }
 
 const openEditModal = (transaction) => {
@@ -244,9 +282,11 @@ const openEditModal = (transaction) => {
     amount: transaction.amount,
     category_id: transaction.category_id,
     description: transaction.description || '',
-    date: transaction.transaction_date?.split('T')[0]
+    date: transaction.transaction_date?.split('T')[0],
+    income_budget_id: transaction.income_budget_id || null
   }
   showModal.value = true
+  loadIncomeBudgets()
 }
 
 const handleSubmit = async () => {
@@ -283,6 +323,15 @@ const showAlert = (message, type) => {
 onMounted(() => {
   categoryStore.fetchCategories()
   fetchData()
+})
+
+watch(() => [form.value.type, form.value.date], () => {
+  if (showModal.value) {
+    if (form.value.type !== 'expense') {
+      form.value.income_budget_id = null
+    }
+    loadIncomeBudgets()
+  }
 })
 </script>
 
@@ -403,6 +452,24 @@ onMounted(() => {
   font-size: 12px;
   color: #9ca3af;
   margin: 4px 0 0 0;
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.source-badge.auto {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .transaction-right {

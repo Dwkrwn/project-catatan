@@ -56,6 +56,25 @@
             </div>
             <div class="budget-amount">Rp {{ formatMoney(b.amount) }}</div>
           </div>
+          <div class="budget-progress">
+            <div class="progress-info">
+              <span :class="['progress-label', b.category_type]">
+                {{ b.category_type === "expense" ? "Terpakai" : "Sisa" }} {{ clampProgress(b.progress) }}%
+              </span>
+              <span class="progress-value">
+                {{ b.category_type === "expense"
+                  ? "Rp " + formatMoney(b.spent)
+                  : "Rp " + formatMoney(Math.max(0, b.amount - b.drawn))
+                }} / Rp {{ formatMoney(b.amount) }}
+              </span>
+            </div>
+            <div class="progress-bar">
+              <div
+                :class="['progress-fill', b.category_type]"
+                :style="{ width: clampProgress(b.progress) + '%' }"
+              ></div>
+            </div>
+          </div>
           <div class="budget-actions">
             <button @click="openEditModal(b)" class="action-btn">
               <Pencil :size="14" />
@@ -220,6 +239,8 @@ const years = computed(() => {
 });
 
 const formatMoney = (amount) => new Intl.NumberFormat("id-ID").format(amount);
+
+const clampProgress = (p) => Math.min(Math.max(Number(p) || 0, 0), 100);
 
 const fetchData = () => {
   const params = {};
@@ -470,6 +491,47 @@ onMounted(() => {
   font-weight: 700;
   color: #16a34a;
 }
+
+.budget-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.progress-label {
+  font-weight: 600;
+}
+
+.progress-label.expense { color: #ef4444; }
+.progress-label.income { color: #16a34a; }
+
+.progress-value {
+  color: #6b7280;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.expense { background: #ef4444; }
+.progress-fill.income { background: #22c55e; }
 
 .budget-actions {
   display: flex;

@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS tb_transactions (
     amount              NUMERIC(12, 2) NOT NULL,
     description         TEXT,
     transaction_date    DATE NOT NULL DEFAULT CURRENT_DATE,
+    income_budget_id    INTEGER REFERENCES tb_budgets(id) ON DELETE SET NULL,
+    is_auto             BOOLEAN NOT NULL DEFAULT FALSE,
+    source_budget_id    INTEGER REFERENCES tb_budgets(id) ON DELETE SET NULL,
     created_at          TIMESTAMPTZ DEFAULT NOW()
 );
 

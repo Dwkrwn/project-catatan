@@ -6,6 +6,7 @@ const addTransactionSchema = Joi.object({
     amount: Joi.number().positive().required(),
     description: Joi.string().allow('', null).optional(),
     date: Joi.date().optional(),
+    income_budget_id: Joi.number().integer().allow(null).optional(),
 });
 
 const updateTransactionSchema = Joi.object({
@@ -14,6 +15,7 @@ const updateTransactionSchema = Joi.object({
     amount: Joi.number().positive().optional(),
     description: Joi.string().allow('', null).optional(),
     date: Joi.date().optional(),
+    income_budget_id: Joi.number().integer().allow(null).optional(),
 });
 
 module.exports = {

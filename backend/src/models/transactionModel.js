@@ -1,8 +1,15 @@
 const pool = require('../config/db');
 
 const getAll = async (userId, month, year, type) => {
-    let query = ` SELECT t.*, c.name as category_name, c.icon as category_icon
-            FROM tb_transactions t LEFT JOIN tb_categories c ON t.category_id = c.id
+    let query = ` SELECT t.*, c.name as category_name, c.icon as category_icon,
+            sb.category_name as source_budget_name
+            FROM tb_transactions t
+            LEFT JOIN tb_categories c ON t.category_id = c.id
+            LEFT JOIN (
+                SELECT b.id, c2.name as category_name
+                FROM tb_budgets b
+                LEFT JOIN tb_categories c2 ON b.category_id = c2.id
+            ) sb ON sb.id = t.source_budget_id
             WHERE t.user_id = $1 `;
 
     const params = [userId];
@@ -24,11 +31,11 @@ const getAll = async (userId, month, year, type) => {
     return result.rows;
 };
 
-const create = async (userId, categoryId, type, amount, description, date) => {
+const create = async (userId, categoryId, type, amount, description, date, incomeBudgetId, isAuto = false, sourceBudgetId = null) => {
     const result = await pool.query(
-        `INSERT INTO tb_transactions (user_id, category_id, type, amount, description, transaction_date)
-            VALUES ($1, $2, $3, $4, $5,$6) RETURNING *`,
-        [userId, categoryId, type, amount, description, date || new Date()]
+        `INSERT INTO tb_transactions (user_id, category_id, type, amount, description, transaction_date, income_budget_id, is_auto, source_budget_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        [userId, categoryId, type, amount, description, date || new Date(), incomeBudgetId || null, isAuto, sourceBudgetId]
     );
     return result.rows[0];
 };
@@ -41,12 +48,12 @@ const findById = async (id, userId) => {
     return result.rows[0];
 };
 
-const update = async (categoryId, type, amount, description, date, id, userId) => {
+const update = async (categoryId, type, amount, description, date, incomeBudgetId, id, userId) => {
     const result = await pool.query(
         `UPDATE tb_transactions
-            SET category_id = $1, type = $2, amount = $3, description = $4, transaction_date = $5
-            WHERE id = $6 AND user_id = $7 RETURNING *`,
-        [categoryId, type, amount, description, date, id, userId]
+            SET category_id = $1, type = $2, amount = $3, description = $4, transaction_date = $5, income_budget_id = $6
+            WHERE id = $7 AND user_id = $8 RETURNING *`,
+        [categoryId, type, amount, description, date, incomeBudgetId || null, id, userId]
     );
     return result.rows[0];
 };
@@ -57,6 +64,34 @@ const remove = async (id, userId) => {
         [id, userId]
     );
     return result.rows[0];
+};
+
+const findBySourceBudgetId = async (sourceBudgetId, userId) => {
+    const result = await pool.query(
+        `SELECT * FROM tb_transactions
+             WHERE source_budget_id = $1 AND user_id = $2 AND is_auto = TRUE`,
+        [sourceBudgetId, userId]
+    );
+    return result.rows[0];
+};
+
+const updateBySourceBudget = async (sourceBudgetId, userId, amount, date) => {
+    const result = await pool.query(
+        `UPDATE tb_transactions
+             SET amount = $1, transaction_date = $2
+             WHERE source_budget_id = $3 AND user_id = $4 AND is_auto = TRUE RETURNING *`,
+        [amount, date || new Date(), sourceBudgetId, userId]
+    );
+    return result.rows[0];
+};
+
+const deleteBySourceBudgetId = async (sourceBudgetId, userId) => {
+    const result = await pool.query(
+        `DELETE FROM tb_transactions
+             WHERE source_budget_id = $1 AND user_id = $2 AND is_auto = TRUE RETURNING *`,
+        [sourceBudgetId, userId]
+    );
+    return result.rows;
 };
 
 const getIncomeTotal = async (userId, month, year) => {
@@ -129,6 +164,9 @@ module.exports = {
     findById,
     update,
     remove,
+    findBySourceBudgetId,
+    updateBySourceBudget,
+    deleteBySourceBudgetId,
     getIncomeTotal,
     getExpenseTotal,
     getBalance,
